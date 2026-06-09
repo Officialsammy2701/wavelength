@@ -129,8 +129,8 @@ Every single one of these will be in Wavelength naturally — not forced.
 **1. Spotify Developer Account**
 Go to [developer.spotify.com](https://developer.spotify.com) → create an app → grab your `Client ID` and `Client Secret`
 
-`SPOTIFY_CLIENT_ID` = 261d9f84eae2481792990f1bbc8e2688
-`SPOTIFY_CLIENT_SECRET`: 60d447b7ead84fae81a90fa5d30cca8b
+`SPOTIFY_CLIENT_ID` = spotify_client_id_here
+`SPOTIFY_CLIENT_SECRET`: spotify_client_secret_here
 `SPOTIFY_REDIRECT_URL`: http://127.0.0.1:5000/api/auth/callback/spotify
 
 **2. Anthropic API Key**
