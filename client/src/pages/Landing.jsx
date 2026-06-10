@@ -1,6 +1,6 @@
 const Landing = () => {
   const handleLogin = () => {
-    window.location.href = 'http://127.0.0.1:3001/auth/login';
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:3001'}/auth/login`;
   };
 
   return (

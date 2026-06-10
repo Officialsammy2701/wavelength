@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import useAuthStore from '../store/useAuthStore';
 import api from '../lib/api';
 
-const socket = io('http://127.0.0.1:3001');
+const socket = io(import.meta.env.VITE_API_URL || 'http://127.0.0.1:3001');
 
 export default function Room() {
   const { roomId } = useParams();
