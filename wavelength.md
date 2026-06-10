@@ -143,12 +143,3 @@ Create a new repo called `wavelength` — make it public so recruiters can find 
 
 ---
 
-
-# Stage all your initial structural files
-git add .
-
-# Commit with a clear, professional description
-git commit -m "chore: initialize full-stack workspace architecture and secure environment variables"
-
-# Push your code up to GitHub's main branch
-git push -u origin main

@@ -1,0 +1,70 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
+  engineType    = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  spotifyId       String   @unique
+  displayName     String
+  email           String?
+  avatarUrl       String?
+  spotifyUrl      String?
+  accessToken     String
+  refreshToken    String
+  soundIdentity   Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sentMatches     Match[]  @relation("SentMatches")
+  receivedMatches Match[]  @relation("ReceivedMatches")
+  rooms           RoomParticipant[]
+  resonanceReports ResonanceReport[]
+}
+
+model Match {
+  id           String   @id @default(cuid())
+  senderId     String
+  receiverId   String
+  score        Float
+  createdAt    DateTime @default(now())
+
+  sender       User     @relation("SentMatches", fields: [senderId], references: [id])
+  receiver     User     @relation("ReceivedMatches", fields: [receiverId], references: [id])
+}
+
+model Room {
+  id           String   @id @default(cuid())
+  name         String
+  trackUri     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  participants RoomParticipant[]
+}
+
+model RoomParticipant {
+  id        String   @id @default(cuid())
+  userId    String
+  roomId    String
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  room      Room     @relation(fields: [roomId], references: [id])
+}
+
+model ResonanceReport {
+  id          String   @id @default(cuid())
+  userId      String
+  weekOf      DateTime
+  report      Json
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
