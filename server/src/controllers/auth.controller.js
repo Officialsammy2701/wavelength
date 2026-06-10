@@ -72,4 +72,11 @@ const refreshToken = async (req, res) => {
   res.json({ message: 'Refresh token endpoint' });
 };
 
-module.exports = { spotifyLogin, spotifyCallback, refreshToken };
+const logout = (req, res) => {
+  const clientUrl = process.env.CLIENT_URL;
+  res.redirect(
+    `https://accounts.spotify.com/en/logout?continue=${encodeURIComponent(clientUrl)}`
+  );
+};
+
+module.exports = { spotifyLogin, spotifyCallback, refreshToken, logout };

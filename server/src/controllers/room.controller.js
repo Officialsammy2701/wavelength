@@ -40,4 +40,14 @@ const joinRoom = async (req, res) => {
   }
 };
 
-module.exports = { createRoom, getRooms, joinRoom };
+const deleteRoom = async (req, res) => {
+  try {
+    await prisma.roomParticipant.deleteMany({ where: { roomId: req.params.roomId } });
+    await prisma.room.delete({ where: { id: req.params.roomId } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { createRoom, getRooms, joinRoom, deleteRoom };

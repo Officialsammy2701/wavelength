@@ -71,7 +71,7 @@ Socket.io (WebSockets)
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/wavelength.git
+git clone https://github.com/Officialsammy2701/wavelength.git
 cd wavelength
 
 # Install server dependencies
@@ -153,7 +153,7 @@ Open `http://localhost:5173`
 ## Author
 
 **Ismail** — CS Student @ UPEI
-- GitHub: [@YOUR_USERNAME](https://github.com/YOUR_USERNAME)
+- GitHub: [@Officialsammy2701]( https://github.com/Officialsammy2701)
 - Portfolio: *coming soon*
 
 ---
