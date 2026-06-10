@@ -64,4 +64,23 @@ const getUserTopArtists = async (accessToken, timeRange = 'medium_term', limit =
   return response.data.items;
 };
 
-module.exports = { getSpotifyAuthUrl, getSpotifyTokens, getSpotifyUser, getUserTopTracks, getUserTopArtists };
+const refreshAccessToken = async (refreshToken) => {
+  const response = await axios.post(
+    'https://accounts.spotify.com/api/token',
+    querystring.stringify({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(
+          `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+        ).toString('base64')}`
+      }
+    }
+  );
+  return response.data.access_token;
+};
+
+module.exports = { getSpotifyAuthUrl, getSpotifyTokens, getSpotifyUser, getUserTopTracks, getUserTopArtists, refreshAccessToken };

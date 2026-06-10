@@ -1,31 +1,29 @@
 const { PrismaClient } = require('@prisma/client');
 const { generateSoundIdentity, generateResonanceReport } = require('../services/claude.service');
-const { getUserTopTracks, getUserTopArtists } = require('../services/spotify.service');
+const { getUserTopTracks, getUserTopArtists, refreshAccessToken } = require('../services/spotify.service');
 
 const prisma = new PrismaClient();
-
-const getProfile = async (req, res) => {
-  try {
-    res.json(req.user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
 
 const getSoundIdentity = async (req, res) => {
   try {
     console.log('Fetching top tracks and artists for:', req.user.displayName);
-    
+
+    // Refresh token first
+    const freshToken = await refreshAccessToken(req.user.refreshToken);
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { accessToken: freshToken }
+    });
+
     const [topTracks, topArtists] = await Promise.all([
-      getUserTopTracks(req.user.accessToken),
-      getUserTopArtists(req.user.accessToken)
+      getUserTopTracks(freshToken),
+      getUserTopArtists(freshToken)
     ]);
 
     console.log('Top tracks fetched:', topTracks.length);
     console.log('Top artists fetched:', topArtists.length);
 
     const identity = await generateSoundIdentity(topTracks, topArtists, req.user.displayName);
-    console.log('Sound identity generated:', identity);
 
     await prisma.user.update({
       where: { id: req.user.id },
@@ -42,9 +40,11 @@ const getSoundIdentity = async (req, res) => {
 
 const getResonanceReport = async (req, res) => {
   try {
+    const freshToken = await refreshAccessToken(req.user.refreshToken);
+
     const [topTracks, topArtists] = await Promise.all([
-      getUserTopTracks(req.user.accessToken, 'short_term'),
-      getUserTopArtists(req.user.accessToken, 'short_term')
+      getUserTopTracks(freshToken, 'short_term'),
+      getUserTopArtists(freshToken, 'short_term')
     ]);
 
     const report = await generateResonanceReport(topTracks, topArtists, req.user.displayName);
@@ -58,6 +58,14 @@ const getResonanceReport = async (req, res) => {
     });
 
     res.json(report);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getProfile = async (req, res) => {
+  try {
+    res.json(req.user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

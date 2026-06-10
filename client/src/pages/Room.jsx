@@ -1,127 +1,129 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import useAuth from '../hooks/useAuth';
+import Navbar from '../components/Navbar';
+import useAuthStore from '../store/useAuthStore';
 import api from '../lib/api';
 
 const socket = io('http://127.0.0.1:3001');
 
-const Room = () => {
-  const { user } = useAuth();
-  const [rooms, setRooms] = useState([]);
-  const [activeRoom, setActiveRoom] = useState(null);
+export default function Room() {
+  const { roomId } = useParams();
+  const { user } = useAuthStore();
   const [reactions, setReactions] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [roomName, setRoomName] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/room').then((res) => setRooms(res.data)).catch(console.error);
+    fetchRooms();
+    if (roomId !== 'lobby') {
+      socket.emit('join_room', roomId);
+    }
 
     socket.on('receive_reaction', ({ reaction }) => {
-      setReactions((prev) => [...prev, reaction]);
-      setTimeout(() => setReactions((prev) => prev.slice(1)), 2000);
+      setReactions((prev) => [...prev.slice(-10), reaction]);
     });
 
-    socket.on('user_joined', () => console.log('Someone joined'));
+    socket.on('user_joined', () => {
+      setReactions((prev) => [...prev, '👋']);
+    });
 
-    return () => socket.disconnect();
-  }, []);
+    return () => {
+      socket.off('receive_reaction');
+      socket.off('user_joined');
+      if (roomId !== 'lobby') socket.emit('leave_room', roomId);
+    };
+  }, [roomId]);
+
+  const fetchRooms = async () => {
+    try {
+      const res = await api.get('/room');
+      setRooms(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const createRoom = async () => {
     if (!roomName.trim()) return;
-    const res = await api.post('/room', { name: roomName });
-    setRooms((prev) => [...prev, res.data]);
-    joinRoom(res.data);
-    setRoomName('');
-  };
-
-  const joinRoom = (room) => {
-    setActiveRoom(room);
-    socket.emit('join_room', room.id);
+    try {
+      await api.post('/room', { name: roomName });
+      setRoomName('');
+      fetchRooms();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const sendReaction = (emoji) => {
-    socket.emit('send_reaction', { roomId: activeRoom.id, reaction: emoji });
-    setReactions((prev) => [...prev, emoji]);
-    setTimeout(() => setReactions((prev) => prev.slice(1)), 2000);
+    socket.emit('send_reaction', { roomId, reaction: emoji });
+    setReactions((prev) => [...prev.slice(-10), emoji]);
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white px-6 py-10 max-w-4xl mx-auto">
-      <button onClick={() => navigate('/dashboard')} className="text-white/40 hover:text-white mb-8 text-sm transition">← Back</button>
-      <h2 className="text-3xl font-black mb-2">Listen Together</h2>
-      <p className="text-white/40 mb-8">Create or join a room to vibe in real time</p>
+    <div className="min-h-screen bg-[#0f0f1a] text-white">
+      <Navbar />
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        <h2 className="text-4xl font-bold mb-2">Listening <span className="text-[#e94560]">Rooms</span></h2>
+        <p className="text-[#666680] mb-10">Listen together in real time</p>
 
-      {!activeRoom ? (
-        <>
-          {/* Create room */}
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-6 mb-6">
-            <h3 className="font-bold mb-4">Create a Room</h3>
-            <div className="flex gap-3">
-              <input
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                placeholder="Room name..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 outline-none focus:border-[#8b5cf6] transition"
-              />
-              <button onClick={createRoom} className="px-6 py-3 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-xl font-semibold transition">
-                Create
-              </button>
-            </div>
-          </div>
-
-          {/* Active rooms */}
-          <div className="space-y-3">
-            {rooms.map((room) => (
-              <div key={room.id} className="rounded-2xl bg-white/5 border border-white/10 p-5 flex justify-between items-center">
-                <div>
-                  <p className="font-bold">{room.name}</p>
-                  <p className="text-white/40 text-sm">{room.participants?.length || 0} listening</p>
-                </div>
-                <button onClick={() => joinRoom(room)} className="px-5 py-2 bg-[#8b5cf6]/20 text-[#8b5cf6] rounded-full text-sm font-semibold hover:bg-[#8b5cf6]/30 transition">
-                  Join
-                </button>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        /* Active room view */
-        <div className="rounded-3xl bg-white/5 border border-white/10 p-8 text-center relative overflow-hidden">
-          <div className="absolute top-4 right-4">
-            <button onClick={() => setActiveRoom(null)} className="text-white/40 hover:text-white text-sm transition">Leave</button>
-          </div>
-
-          <div className="w-24 h-24 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center mx-auto mb-6 text-4xl">
-            🎧
-          </div>
-
-          <h3 className="text-2xl font-black mb-2">{activeRoom.name}</h3>
-          <p className="text-white/40 mb-8">You're listening together</p>
-
-          {/* Reactions */}
-          <div className="h-12 mb-6 flex items-center justify-center gap-2">
-            {reactions.map((r, i) => (
-              <span key={i} className="text-2xl animate-bounce">{r}</span>
-            ))}
-          </div>
-
-          {/* Reaction buttons */}
-          <div className="flex justify-center gap-4">
-            {['🔥', '💜', '🎵', '✨', '😭'].map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => sendReaction(emoji)}
-                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 text-xl transition hover:scale-110"
-              >
-                {emoji}
-              </button>
-            ))}
+        <div className="bg-[#16213e] rounded-2xl p-6 mb-8 border border-[#ffffff10]">
+          <h3 className="text-lg font-semibold mb-4">Create a Room</h3>
+          <div className="flex gap-3">
+            <input
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder="Room name..."
+              className="flex-1 bg-[#0f0f1a] border border-[#ffffff15] rounded-xl px-4 py-3 text-white placeholder-[#444460] focus:outline-none focus:border-[#e94560]"
+            />
+            <button
+              onClick={createRoom}
+              className="px-6 py-3 bg-[#e94560] rounded-xl font-semibold hover:opacity-80 transition"
+            >
+              Create
+            </button>
           </div>
         </div>
-      )}
+
+        {roomId !== 'lobby' && (
+          <div className="bg-[#16213e] rounded-2xl p-6 mb-8 border border-[#ffffff10]">
+            <h3 className="text-lg font-semibold mb-4">React in Real Time</h3>
+            <div className="flex gap-3 mb-4">
+              {['🔥', '❤️', '🎵', '😭', '🚀', '👏'].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => sendReaction(emoji)}
+                  className="text-2xl hover:scale-125 transition-transform"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 flex-wrap min-h-8">
+              {reactions.map((r, i) => (
+                <span key={i} className="text-2xl animate-bounce">{r}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {rooms.map((room) => (
+            <div key={room.id} className="bg-[#16213e] rounded-2xl p-6 border border-[#ffffff10] hover:border-[#e94560]/40 transition">
+              <h3 className="font-semibold text-lg mb-2">{room.name}</h3>
+              <p className="text-[#666680] text-sm mb-4">
+                {room.participants?.length} listener{room.participants?.length !== 1 ? 's' : ''}
+              </p>
+              <a
+                href={`/room/${room.id}`}
+                className="px-4 py-2 bg-[#e94560]/20 text-[#e94560] rounded-full text-sm hover:bg-[#e94560]/30 transition"
+              >
+                Join Room
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Room;
+}

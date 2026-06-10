@@ -1,17 +1,18 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import useStore from '../store/useStore';
+import useAuthStore from '../store/useAuthStore';
 
-const AuthSuccess = () => {
-  const [searchParams] = useSearchParams();
+export default function AuthSuccess() {
+  const [params] = useSearchParams();
+  const { setToken } = useAuthStore();
   const navigate = useNavigate();
-  const { setToken } = useStore();
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const token = params.get('token');
+    console.log('Token from URL:', token);
     if (token) {
-      localStorage.setItem('wl_token', token);
       setToken(token);
+      console.log('Token saved, checking localStorage:', localStorage.getItem('token'));
       navigate('/dashboard');
     } else {
       navigate('/');
@@ -19,10 +20,8 @@ const AuthSuccess = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-      <p className="text-white text-xl">Connecting your sound...</p>
+    <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
+      <p className="text-white text-xl animate-pulse">Connecting your sound...</p>
     </div>
   );
-};
-
-export default AuthSuccess;
+}
