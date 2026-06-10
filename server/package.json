@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "nodemon src/index.js",
-  "start": "node src/index.js",
-  "test": "jest",
-  "db:migrate": "prisma migrate dev",
-  "db:generate": "prisma generate",
-  "db:studio": "prisma studio"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "npx prisma generate && npx prisma migrate deploy",
+    "test": "jest",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
   },
   "keywords": [],
   "author": "",
